@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Adding new product</title>
+    <link rel="stylesheet" href="product_style.css">
+</head>
+<body>
+<div id="Product-Container">
+    <h2>Add new product</h2>
+    <form id="productForm">
+        <input type="text" name="name" placeholder="Product Name" required />
+        <input type="number" name="price" placeholder="Price" required />
+        <input type="text" name="description" placeholder="Description" required/>
+        <input type="text" name="type" placeholder="Type" required />
+        <input type="file" name="images" accept="image/*" multiple />
+        <button type="submit">Add new product for sale</button>
+    </form>
+    <p id="statusMessage"></p>
+</div>
+
+<script>
+    const form = document.getElementById("productForm");
+    const statusMsg = document.getElementById("statusMessage");
+
+    form.addEventListener("submit", async function(e) {
+        e.preventDefault();
+
+        const formData = new FormData();
+
+        // Get form values
+        const name = form.elements["name"].value;
+        const price = form.elements["price"].value;
+        const description = form.elements["description"].value;
+        const type = form.elements["type"].value;
+        const files = form.elements["images"].files;
+
+        // Create JSON product object
+        const product = {
+            name,
+            price,
+            description,
+            type
+        };
+
+        // Append JSON blob
+        formData.append("product", new Blob(
+            [JSON.stringify(product)],
+            { type: "application/json" }
+        ), "product.json");
+
+
+        // Append image files
+        for (let i = 0; i < files.length; i++) {
+            formData.append("imageFiles", files[i]);
+        }
+
+        try {
+            const response = await fetch("http://localhost:8080/api/products/add-product", {
+                method: "POST",
+                body: formData
+            });
+
+            if (response.ok) {
+                statusMsg.textContent = "✅ Product added successfully!";
+                statusMsg.style.color = "green";
+                form.reset();
+                setTimeout(() => {
+                    window.location.href = "index.html"; // Change to your real main page
+                }, 2000);
+            } else {
+                const errorText = await response.text();
+                statusMsg.textContent = "❌ Failed: " + errorText;
+                statusMsg.style.color = "red";
+            }
+        } catch (err) {
+            statusMsg.textContent = "❌ Error: " + err.message;
+            statusMsg.style.color = "red";
+        }
+    });
+</script>
+</body>
+</html>

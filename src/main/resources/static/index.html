@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>E commerce</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="product_style.css">
+    <link href="login.html" rel="import">
+    <link href="product_add.html" rel="import">
+    <link href="Sign-New.html" rel="import">
+    <link href="account.html" rel="import">
+    <link href="product-details.html" rel="import">
+</head>
+<body>
+    <header>
+        <h1>JasDo It</h1>
+        <input type="text" id="search-input" placeholder="Search for product...">
+        <button onclick="searchProducts()">Search</button>
+        <a href="login.html" class="login-link">Login</a>
+        <a href="Sign-New.html" class="sign-up-form">Sign Up</a>
+        <a href="product_add.html" class="Add-Product-link" >Add Product</a>
+        <a href="account.html" class="account-link">Account</a>
+    </header>
+    <main class="products">
+    </main>
+    <script>
+        async function fetchAndDisplayProducts() {
+            const productList = document.getElementById('product-list');
+
+            try {
+                const response = await fetch("http://localhost:8080/api/products/all-products"); // Adjust if endpoint is different
+                const products = await response.json();
+
+                if (!Array.isArray(products)) {
+                    productList.innerHTML = "<p>⚠️ Failed to load products.</p>";
+                    return;
+                }
+
+                productList.innerHTML = "";
+
+                for (const product of products) {
+                    const productCard = document.createElement("div");
+                    productCard.classList.add("product-item");
+
+                    // Create image container
+                    const imageContainer = document.createElement("div");
+
+                    if (product.images && product.images.length > 0) {
+                        product.images.forEach(img => {
+                            const image = document.createElement("img");
+                            image.src = `data:image/jpeg;base64,${img.base64Data}`;
+                            image.style.width = "100%";
+                            image.style.maxHeight = "200px";
+                            image.style.objectFit = "cover";
+                            imageContainer.appendChild(image);
+                        });
+                    } else {
+                        const placeholder = document.createElement("img");
+                        placeholder.src = "https://via.placeholder.com/300x200?text=No+Image";
+                        imageContainer.appendChild(placeholder);
+                    }
+
+                    const details = document.createElement("div");
+                    details.classList.add("product-details");
+
+                    details.innerHTML = `
+    <h2>${product.name}</h2>
+    <h3>$${product.price}</h3>
+    <p>${product.description}</p>
+    <p>Type: ${product.type}</p>
+    <button onclick="viewProduct(${product.id})">View Details</button>
+`;
+
+
+                    productCard.appendChild(imageContainer);
+                    productCard.appendChild(details);
+                    productList.appendChild(productCard);
+                }
+
+
+            } catch (error) {
+                productList.innerHTML = "<p>❌ Error loading products: " + error.message + "</p>";
+            }
+        }
+
+        // Call function after page loads
+        window.onload = fetchAndDisplayProducts;
+        function viewProduct(id) {
+            window.location.href = `product-details.html?id=${id}`;
+        }
+    </script>
+    <div id="product-list"></div>
+
+    <script>
+        fetch("http://localhost:8080/api/products/all-products")
+            .then(response => response.json())
+            .then(products => {
+                const container = document.getElementById("product-list");
+                products.forEach(p => {
+                    const productCard = document.createElement("div");
+                    productCard.innerHTML = `
+                <h3>${p.name}</h3>
+                <p>Price: $${p.price}</p>
+                <button onclick="viewProduct(${p.id})">View Details</button>
+            `;
+                    container.appendChild(productCard);
+                });
+            });
+
+        function viewProduct(id) {
+            window.location.href = `product-details.html?id=${id}`;
+        }
+    </script>
+    <script>
+
+        //for search box
+        async function searchProduct() {
+            const query = document.getElementById('search-input').value.trim();
+            const productList = document.getElementById('product-list');
+
+            if (!query) {
+                alert("❗Please enter a product name.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:8080/api/products/get-oneProduct?name=${encodeURIComponent(query)}`);
+                if (!response.ok) {
+                    throw new Error("No product found with that name.");
+                }
+
+                const product = await response.json();
+
+                productList.innerHTML = ""; // Clear old list
+
+                const productCard = document.createElement("div");
+                productCard.classList.add("product-item");
+
+                const imageContainer = document.createElement("div");
+
+                if (product.images && product.images.length > 0) {
+                    product.images.forEach(img => {
+                        const image = document.createElement("img");
+                        image.src = `data:image/jpeg;base64,${img.base64Data}`;
+                        image.style.width = "100%";
+                        image.style.maxHeight = "200px";
+                        image.style.objectFit = "cover";
+                        imageContainer.appendChild(image);
+                    });
+                } else {
+                    const placeholder = document.createElement("img");
+                    placeholder.src = "https://via.placeholder.com/300x200?text=No+Image";
+                    imageContainer.appendChild(placeholder);
+                }
+
+                const details = document.createElement("div");
+                details.classList.add("product-details");
+                details.innerHTML = `
+                <h2>${product.name}</h2>
+                <h3>$${product.price}</h3>
+                <p>${product.description}</p>
+                <p>Type: ${product.type}</p>
+            `;
+
+                productCard.appendChild(imageContainer);
+                productCard.appendChild(details);
+                productList.appendChild(productCard);
+
+            } catch (error) {
+                productList.innerHTML = `<p>❌ ${error.message}</p>`;
+            }
+        }
+
+        window.onload = fetchAndDisplayProducts;
+    </script>
+    <script>
+        async function searchProducts() {
+            const query = document.getElementById('search-input').value.trim();
+            if (!query) {
+                alert("❗Please enter a product name.");
+                return;
+            }
+            const searchUrl = `http://localhost:8080/api/products/search?query=${encodeURIComponent(query)}`;
+            await fetchAndDisplayProducts(searchUrl);
+        }
+
+        // Load products when page opens
+        window.onload = () => fetchAndDisplayProducts();
+    </script>
+
+</body>
+</html>

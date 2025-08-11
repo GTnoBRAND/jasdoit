@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>My Account</title>
+    <link rel="stylesheet" href="account.css" />
+</head>
+<body>
+<header>
+    <h1>Welcome, <span id="username-display">User</span>!</h1>
+    <a href="index.html">🏠 Home</a>
+    <button onclick="logout()">Logout</button>
+</header>
+
+<main>
+    <section id="account-info">
+        <h2>Account Information</h2>
+        <form id="update-form" onsubmit="updateUser(event)">
+            <label>Email: <input type="email" id="email" required /></label><br/>
+            <label>Full Name: <input type="text" id="fullname" required /></label><br/>
+            <button type="submit">Update</button>
+        </form>
+    </section>
+
+    <section id="order-history">
+        <h2>My Orders</h2>
+        <ul id="orders-list"></ul>
+    </section>
+</main>
+
+<script>
+    const userId = localStorage.getItem("userId");
+
+    async function fetchUserInfo() {
+        const response = await fetch(`http://localhost:8080/api/sign-new/get-user${userId}`);
+        const user = await response.json();
+        document.getElementById("email").value = user.email;
+        document.getElementById("fullname").value = user.fullName;
+        document.getElementById("username-display").innerText = user.fullName;
+    }
+
+    async function fetchUserOrders() {
+        const res = await fetch(`http://localhost:8080/api/account/orders/${userId}`);
+        const orders = await res.json();
+
+        const list = document.getElementById("orders-list");
+        list.innerHTML = "";
+
+        orders.forEach(order => {
+            const li = document.createElement("li");
+            li.innerHTML = `Order #${order.id} - ${order.status} - Total: $${order.totalPrice}`;
+            list.appendChild(li);
+        });
+    }
+
+    async function updateUser(event) {
+        event.preventDefault();
+        const email = document.getElementById("email").value;
+        const fullName = document.getElementById("fullname").value;
+
+        const response = await fetch(`http://localhost:8080/api/sign-new/update-user${userId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, fullName })
+        });
+
+        if (response.ok) {
+            alert("✅ Account updated!");
+        } else {
+            alert("❌ Failed to update account.");
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem("userId");
+        window.location.href = "login.html";
+    }
+
+    window.onload = () => {
+        if (!userId) {
+            alert("❌ Please log in first.");
+            window.location.href = "login.html";
+            return;
+        }
+        fetchUserInfo();
+        fetchUserOrders();
+    };
+</script>
+</body>
+</html>
