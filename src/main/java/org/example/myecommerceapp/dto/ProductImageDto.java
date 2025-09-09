@@ -1,10 +1,15 @@
 package org.example.myecommerceapp.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.io.Serializable;
 import java.util.Base64;
 
-public class ProductImageDto {
+public class ProductImageDto implements Serializable {
 
     private Long id;
+
+    @JsonProperty("data")
     private String base64Data;
 
     public ProductImageDto(Long id, byte[] data) {

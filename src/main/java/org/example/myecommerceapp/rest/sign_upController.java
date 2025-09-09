@@ -2,7 +2,9 @@ package org.example.myecommerceapp.rest;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.example.myecommerceapp.model.Users;
+import org.example.myecommerceapp.service.MailSender;
 import org.example.myecommerceapp.service.sign_upService;
+import org.example.myecommerceapp.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +14,6 @@ import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 
-import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -20,15 +21,50 @@ import java.util.Optional;
 @RequestMapping("/api/sign-new")
 public class sign_upController {
 
+    private final JwtUtil jwtUtil;
 
+    @Autowired
+    private MailSender mailSender;
 
     @Autowired
     private sign_upService service;
 
+    public sign_upController(JwtUtil jwtUtil) {
+        this.jwtUtil = jwtUtil;
+    }
+
     @PostMapping("sign_UP")
-    public ResponseEntity<Users> signUp(@RequestBody Users user) {
-        Users newUser = service.save(user);
-        return new ResponseEntity<>(newUser, HttpStatus.CREATED);
+    public ResponseEntity<String> signUp(@RequestBody Users user) {
+        Optional<Users> existingUser = service.findByEmail(user.getEmail());
+
+        if (existingUser.isPresent()) {
+            Users u = existingUser.get();
+
+            if (u.isVerified()) {
+                return ResponseEntity.badRequest().body("You are already registered and verified.");
+            }
+
+            // Only send a new token if the user doesn't already have one
+            if (u.getVerificationToken() == null) {
+                String verificationToken = JwtUtil.generateToken(u.getEmail());
+                u.setVerificationToken(verificationToken);
+                service.save(u);
+                mailSender.sendVerificationEmail(u.getEmail(), verificationToken);
+            }
+
+            return ResponseEntity.ok("Verification email has been sent (if not already active).");
+        }
+
+        // New user registration
+        user.setPassword(new BCryptPasswordEncoder().encode(user.getPassword()));
+        String verificationToken = JwtUtil.generateToken(user.getEmail());
+        user.setVerificationToken(verificationToken);
+        user.setVerified(false);
+        service.save(user);
+        mailSender.sendVerificationEmail(user.getEmail(), verificationToken);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body("Registration successful. Please check your email to verify your account.");
     }
 
     @GetMapping("/{id}")

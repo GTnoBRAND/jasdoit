@@ -1,4 +1,4 @@
-package org.example.myecommerceapp.aop;
+package org.example.myecommerceapp.aspect;
 
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterThrowing;

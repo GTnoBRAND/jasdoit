@@ -14,6 +14,7 @@
         <input type="text" name="description" placeholder="Description" required/>
         <input type="text" name="type" placeholder="Type" required />
         <input type="file" name="images" accept="image/*" multiple />
+        <input type="number" name="quantity" placeholder="Quantity" required />
         <button type="submit">Add new product for sale</button>
     </form>
     <p id="statusMessage"></p>
@@ -34,13 +35,16 @@
         const description = form.elements["description"].value;
         const type = form.elements["type"].value;
         const files = form.elements["images"].files;
+        const quantity = form.elements["quantity"].value;
 
         // Create JSON product object
         const product = {
             name,
             price,
             description,
-            type
+            type,
+            files,
+            quantity
         };
 
         // Append JSON blob

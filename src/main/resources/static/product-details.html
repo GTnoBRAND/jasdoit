@@ -2,30 +2,141 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Product Info</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .product-img {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .thumbnail {
+            cursor: pointer;
+            width: 80px;
+            margin: 5px;
+            border: 2px solid transparent;
+        }
+        .thumbnail:hover {
+            border: 2px solid #007bff;
+        }
+    </style>
 </head>
-<body>
-<h1 id="product-name"></h1>
-<p id="product-price"></p>
-<p id="product-description"></p>
-<p id="product-type"></p>
+<body class="bg-light">
+
+<div class="container py-5">
+    <div class="row">
+        <!-- Product Images -->
+        <div class="col-md-6 text-center">
+            <img id="mainImage" class="product-img mb-3" src="" alt="Product Image">
+            <div id="thumbnails" class="d-flex justify-content-center"></div>
+        </div>
+
+        <!-- Product Details -->
+        <div class="col-md-6">
+            <h2 id="productName" class="fw-bold"></h2>
+            <h4 class="text-danger mt-3">Price: $<span id="productPrice"></span></h4>
+            <p class="mt-3"><strong>Description:</strong> <span id="productDescription"></span></p>
+            <p><strong>Type:</strong> <span id="productType"></span></p>
+            <p><strong>Available Quantity:</strong> <span id="productQuantity"></span></p>
+
+            <!-- Quantity Selector -->
+            <div class="d-flex align-items-center mb-3">
+                <label class="me-3 fw-bold">Select Quantity:</label>
+                <button class="btn btn-outline-secondary btn-sm" onclick="changeQuantity(-1)">-</button>
+                <input type="number" id="buyQuantity" value="1" min="1" class="form-control mx-2" style="width:80px;">
+                <button class="btn btn-outline-secondary btn-sm" onclick="changeQuantity(1)">+</button>
+            </div>
+
+            <!-- Action Buttons -->
+            <div>
+                <button class="btn btn-primary btn-lg me-2">Add to Cart</button>
+                <button class="btn btn-success btn-lg" onclick="buyNow()">Buy Now</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
-    const params = new URLSearchParams(window.location.search);
-    const productId = params.get("id");
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get("id");
 
-    fetch(`http://localhost:8080/api/products/product/${productId}`)
-        .then(response => {
-            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-            return response.json();
-        })
+    fetch(`http://localhost:8080/api/single/product/${productId}`)
+        .then(response => response.json())
         .then(product => {
-            document.getElementById("product-name").textContent = product.name;
-            document.getElementById("product-price").textContent = `Price: $${product.price}`;
-            document.getElementById("product-description").textContent = `Description: ${product.description}`;
-            document.getElementById("product-type").textContent = `Type: ${product.type}`;
+            document.getElementById("productName").textContent = product.name;
+            document.getElementById("productPrice").textContent = product.price;
+            document.getElementById("productDescription").textContent = product.description;
+            document.getElementById("productType").textContent = product.type;
+            document.getElementById("productQuantity").textContent = product.quantity;
+
+            if (product.images && product.images.length > 0) {
+                document.getElementById("mainImage").src = `data:image/png;base64,${product.images[0].data}`;
+                let thumbnailsDiv = document.getElementById("thumbnails");
+                product.images.forEach((img, index) => {
+                    let thumb = document.createElement("img");
+                    thumb.src = `data:image/png;base64,${img.data}`;
+                    thumb.classList.add("thumbnail");
+                    thumb.onclick = () => {
+                        document.getElementById("mainImage").src = `data:image/png;base64,${img.data}`;
+                    };
+                    thumbnailsDiv.appendChild(thumb);
+                });
+            }
+        });
+
+    function changeQuantity(amount) {
+        let input = document.getElementById("buyQuantity");
+        let current = parseInt(input.value);
+        if (current + amount >= 1) {
+            input.value = current + amount;
+        }
+    }
+
+    // add to cart
+    // function addToCart() {
+    //     let quantity = document.getElementById("buyQuantity").value;
+    //     let productId = urlParams.get("id");
+    //
+    //     fetch("http://localhost:8080/api/cart/add", {
+    //         method: "POST",
+    //         headers: { "Content-Type": "application/json" },
+    //         body: JSON.stringify({
+    //             productId: productId,
+    //             quantity: quantity
+    //         })
+    //     })
+    //         .then(response => {
+    //             if (response.ok) {
+    //                 alert("Product added to cart!");
+    //             } else {
+    //                 alert("Failed to add to cart.");
+    //             }
+    //         });
+    // }
+
+    function buyNow() {
+        let quantity = document.getElementById("buyQuantity").value;
+        let productId = urlParams.get("id");
+
+        fetch("http://localhost:8080/api/payments/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                productId: productId,
+                quantity: quantity
+            })
         })
-        .catch(err => console.error("Error loading product:", err));
+            .then(response => response.json())
+            .then(data => {
+                // Redirect to PayPal/Stripe approval page
+                if (data.success) {
+                    window.location.href = data.success;
+                } else {
+                    alert("Failed to start payment.");
+                }
+            });
+    }
 </script>
 </body>
 </html>

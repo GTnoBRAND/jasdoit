@@ -1,28 +1,38 @@
 package org.example.myecommerceapp.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@NoArgsConstructor
-@AllArgsConstructor
 @Table(name = "product")
-public class Product {
+public class Product implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
     private String name;
+
+    @Column(name = "price")
     private Double price;
     private String description;
     private String type;
 
+    @Column(name = "quantity")
+    private Long quantity;
+
+    @CreationTimestamp
+    @Column(name = "uploaded_at")
+    private LocalDateTime uploadedAt;
+
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<ProductImage> images = new ArrayList<>();
 
     // helper method
@@ -31,14 +41,25 @@ public class Product {
         image.setProduct(this);
     }
 
-    @CreationTimestamp
-    private LocalDateTime uploaded_at;
+    public Product(Long id, String name, Double price, String description, String type, Long quantity, LocalDateTime uploadedAt, List<ProductImage> images) {
+        this.id = id;
+        this.name = name;
+        this.price = price;
+        this.description = description;
+        this.type = type;
+        this.quantity = quantity;
+        this.uploadedAt = uploadedAt;
+        this.images = images;
+    }
 
-    public long getId() {
+    public Product() {
+    }
+
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -83,10 +104,18 @@ public class Product {
     }
 
     public LocalDateTime getUploaded_at() {
-        return uploaded_at;
+        return uploadedAt;
     }
 
     public void setUploaded_at(LocalDateTime uploaded_at) {
-        this.uploaded_at = uploaded_at;
+        this.uploadedAt = uploaded_at;
+    }
+
+    public Long getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Long quantity) {
+        this.quantity = quantity;
     }
 }

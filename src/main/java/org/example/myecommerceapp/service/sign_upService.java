@@ -16,11 +16,11 @@ public class sign_upService {
     @Autowired
     private sign_upRepo  sign_upRepo;
 
-    public Users save(Users sign) {
+    public Optional<Users> save(Users sign) {
         if (!sign.getPassword().startsWith("$2a$")) { // only encode if not already encoded
             sign.setPassword(encoder.encode(sign.getPassword()));
         }
-        return sign_upRepo.save(sign);
+        return Optional.of(sign_upRepo.save(sign));
     }
 
 

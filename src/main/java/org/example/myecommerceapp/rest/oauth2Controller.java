@@ -20,6 +20,7 @@ import org.springframework.web.servlet.view.RedirectView;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 public class oauth2Controller {
@@ -34,13 +35,25 @@ public class oauth2Controller {
         String email = (String) attributes.get("email");
         String name = (String) attributes.get("name");
 
-        if(service.findByEmail(email).isEmpty()){
+        Optional<Users> existingUser = service.findByEmail(email);
+
+        if(existingUser.isEmpty()){
             Users user = new Users();
             user.setEmail(email);
             user.setPassword(""); //no password for Google users
             user.setName(name);
             user.setRole(Roles.USER);
+            user.setEnabled(true);
+            user.setVerificationToken(null);
             service.save(user);
+        }
+        else{
+            Users users = existingUser.get();
+            if(!users.isVerified()){
+                users.setVerified(true);
+                users.setVerificationToken(null);
+                service.save(users);
+            }
         }
 
         //redirect to frontend home page after login

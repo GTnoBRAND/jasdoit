@@ -7,15 +7,6 @@ fetch('/api/products')
     console.log("Products",products);
 })
 
-function searchProducts() {
-    const query = document.getElementById('searchInput').value.toLowerCase();
-    const cards = document.querySelectorAll('.product-card');
-    cards.forEach(card => {
-        const match = card.textContent.toLowerCase().includes(query);
-        card.style.display = match ? 'block' : 'none';
-    });
-}
-
 // 1. Add a product with images
 async function addProduct(product, imageFiles) {
     const formData = new FormData();
@@ -36,46 +27,88 @@ async function addProduct(product, imageFiles) {
     }
     return await response.text();
 }
-
-// 2. Get all products
-async function getAllProducts() {
-    const response = await fetch(`${API_BASE}/all-products`);
-    return await response.json();
-}
-
-// 3. Get one product by ID
-async function getOneProduct(id) {
-    const response = await fetch(`${API_BASE}/get-oneProduct?id=${id}`);
-    if (!response.ok) throw new Error("Product not found");
-    return await response.json();
-}
-
-// 4. Delete a product by ID
-async function deleteProduct(id) {
-    const response = await fetch(`${API_BASE}/delete-product?id=${id}`, {
-        method: 'DELETE'
+//all products in the main page
+fetch("http://localhost:8080/api/products/all-products")
+    .then(response => response.json())
+    .then(products => {
+        const container = document.getElementById("product-list");
+        products.forEach(p => {
+            const productCard = document.createElement("div");
+            productCard.innerHTML = `
+                <h3>${p.name}</h3>
+                <p>Price: $${p.price}</p>
+                <button onclick="viewProduct(${p.id})">View Details</button>
+            `;
+            container.appendChild(productCard);
+        });
     });
-    if (!response.ok) throw new Error("Failed to delete product");
+
+function viewProduct(id) {
+    window.location.href = `product-details.html?id=${id}`;
 }
 
-// 5. Update a product (note: no image support here, just product fields)
-async function updateProduct(product) {
-    const response = await fetch(`${API_BASE}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(product)
-    });
-    return await response.json();
+
+async function fetchAndDisplayProducts() {
+    const productList = document.getElementById('product-list');
+
+    try {
+        const response = await fetch("http://localhost:8080/api/products/all-products"); // Adjust if endpoint is different
+        const products = await response.json();
+
+        if (!Array.isArray(products)) {
+            productList.innerHTML = "<p>⚠️ Failed to load products.</p>";
+            return;
+        }
+
+        productList.innerHTML = "";
+
+        for (const product of products) {
+            const productCard = document.createElement("div");
+            productCard.classList.add("product-item");
+
+            // Create image container
+            const imageContainer = document.createElement("div");
+
+            if (product.images && product.images.length > 0) {
+                product.images.forEach(img => {
+                    const image = document.createElement("img");
+                    image.src = `data:image/jpeg;base64,${img.base64Data}`;
+                    image.style.width = "100%";
+                    image.style.maxHeight = "200px";
+                    image.style.objectFit = "cover";
+                    imageContainer.appendChild(image);
+                });
+            } else {
+                const placeholder = document.createElement("img");
+                placeholder.src = "https://via.placeholder.com/300x200?text=No+Image";
+                imageContainer.appendChild(placeholder);
+            }
+
+            const details = document.createElement("div");
+            details.classList.add("product-details");
+
+            details.innerHTML = `
+    <h2>${product.name}</h2>
+    <h3>$${product.price}</h3>
+    <p>${product.description}</p>
+    <p>Type: ${product.type}</p>
+    <button onclick="viewProduct(${product.id})">View Details</button>
+`;
+
+
+            productCard.appendChild(imageContainer);
+            productCard.appendChild(details);
+            productList.appendChild(productCard);
+        }
+
+
+    } catch (error) {
+        productList.innerHTML = "<p>❌ Error loading products: " + error.message + "</p>";
+    }
 }
 
-// 6. Get all images for a product by ID
-async function getProductImages(id) {
-    const response = await fetch(`${API_BASE}/product/${id}/images`);
-    if (!response.ok) throw new Error("Failed to fetch images");
-    return await response.json(); // This returns a list of Base64 image byte arrays
-}
+
+//getBy id
 
 document.getElementById('productForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -83,7 +116,10 @@ document.getElementById('productForm').addEventListener('submit', async (e) => {
     const form = e.target;
     const product = {
         name: form.name.value,
-        price: form.price.value
+        price: form.price.value,
+        description: form.description.value,
+        type: form.type.value,
+        quantity: form.quantity.value
         // Add other fields as per your Product model
     };
 
@@ -95,4 +131,6 @@ document.getElementById('productForm').addEventListener('submit', async (e) => {
     } catch (err) {
         alert(err.message);
     }
-});
+}
+
+);

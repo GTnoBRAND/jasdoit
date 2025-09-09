@@ -6,18 +6,17 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.io.Serializable;
+import java.util.Objects;
+
 @Entity
-@Data
 @Table(name = "users")
 public class Users implements Serializable {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotBlank(message = "This line is required!!")
@@ -38,17 +37,33 @@ public class Users implements Serializable {
     @Column(name="contact_number",unique = true)
     private String contact_number;
 
+    @Column(name = "verification_token")
+    private String verificationToken;
+    @Column(name = "is_verified")
+    private Boolean isVerified;
 
-    private Boolean enabled;
+    @Column(name = "reset_token")
+    private String resetToken;
+
+    @Column(name = "enabled")
+    private boolean enabled;
+
     private Roles role;
 
+    public boolean isVerified() {
+        return isVerified;
+    }
 
-    public Users(Long id, String name, String email, String password, String contact_number, Boolean enabled, Roles role) {
+
+    public Users(Long id, String name, String email, String password, String contact_number, String verificationToken, boolean isVerified, String resetToken, boolean enabled, Roles role) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.password = password;
         this.contact_number = contact_number;
+        this.verificationToken = verificationToken;
+        this.isVerified = isVerified;
+        this.resetToken = resetToken;
         this.enabled = enabled;
         this.role = role;
     }
@@ -97,11 +112,31 @@ public class Users implements Serializable {
         this.contact_number = contact_number;
     }
 
-    public Boolean getEnabled() {
+    public String getVerificationToken() {
+        return verificationToken;
+    }
+
+    public void setVerificationToken(String verificationToken) {
+        this.verificationToken = verificationToken;
+    }
+
+    public void setVerified(boolean verified) {
+        isVerified = verified;
+    }
+
+    public String getResetToken() {
+        return resetToken;
+    }
+
+    public void setResetToken(String resetToken) {
+        this.resetToken = resetToken;
+    }
+
+    public boolean isEnabled() {
         return enabled;
     }
 
-    public void setEnabled(Boolean enabled) {
+    public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
 
@@ -111,5 +146,33 @@ public class Users implements Serializable {
 
     public void setRole(Roles role) {
         this.role = role;
+    }
+
+    @Override
+    public String toString() {
+        return "Users{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", email='" + email + '\'' +
+                ", password='" + password + '\'' +
+                ", contact_number='" + contact_number + '\'' +
+                ", verificationToken='" + verificationToken + '\'' +
+                ", isVerified=" + isVerified +
+                ", resetToken='" + resetToken + '\'' +
+                ", enabled=" + enabled +
+                ", role=" + role +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Users users = (Users) o;
+        return isVerified == users.isVerified && enabled == users.enabled && Objects.equals(id, users.id) && Objects.equals(name, users.name) && Objects.equals(email, users.email) && Objects.equals(password, users.password) && Objects.equals(contact_number, users.contact_number) && Objects.equals(verificationToken, users.verificationToken) && Objects.equals(resetToken, users.resetToken) && role == users.role;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name, email, password, contact_number, verificationToken, isVerified, resetToken, enabled, role);
     }
 }

@@ -34,15 +34,10 @@ public class SecurityConfig {
                 .httpBasic(Customizer.withDefaults()) //login form for postman
                 .formLogin(Customizer.withDefaults()) //login form for an app
                 .authorizeHttpRequests(cust->cust.requestMatchers(
-                                "/api/sign-new/sign_UP","/api/account/{id}",
-                                "/api/sign-new/","/api/products/product/{id}",
-                                "/api/products/product/","/api/products/add-product",
-                                "/api/products/all-products","/api/products/delete-product",
-                                "/api/sign-new/update-user{userId}",
-                                "/api/products/get-oneProduct",
-                                "/api/log/login").permitAll()
+                                "/api/**", "/req/**", "/css/**", "/html/**", "/js/**").permitAll()
                         .anyRequest().authenticated()) //authenticates every request coming to server
                 .oauth2Login(Customizer.withDefaults())
+                .logout(logout->logout.logoutSuccessUrl("/").permitAll())
                 //.sessionManagement(session->session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) //makes session stateless
                 .build();
     }

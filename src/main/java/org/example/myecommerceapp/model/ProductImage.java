@@ -1,12 +1,15 @@
 package org.example.myecommerceapp.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
+
+import java.io.Serializable;
 
 @Entity
 @Data
 @Table(name = "product_image")
-public class ProductImage {
+public class ProductImage implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,6 +20,7 @@ public class ProductImage {
 
     @ManyToOne
     @JoinColumn(name="product_id")
+    @JsonBackReference
     private Product product;
 
     public void setProduct(Product product) {
@@ -42,4 +46,5 @@ public class ProductImage {
     public Product getProduct() {
         return product;
     }
+
 }

@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 
 @Builder
 @NoArgsConstructor
-
 public class ErrorDetails {
     private LocalDateTime timestamp;
     private String message;

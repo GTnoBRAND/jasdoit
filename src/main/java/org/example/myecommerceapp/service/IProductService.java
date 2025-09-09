@@ -13,6 +13,4 @@ public interface IProductService {
     Optional<Product> getProductById(Long id);
     Product updateProduct(Product product);
     void deleteProduct(Long id);
-    List<ProductDto> findByNameIgnoreCaseOrDescriptionContainsIgnoreCase(String name, String description);
-
 }

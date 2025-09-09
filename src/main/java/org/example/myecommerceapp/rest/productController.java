@@ -42,6 +42,7 @@ public class productController {
                 productImage.setData(file.getBytes());
                 product.addImage(productImage);
                 productImage.setProduct(product);
+                System.out.println("Quantity from request: " + product.getQuantity());
             }
             service.saveNewProduct(product);
             return new ResponseEntity<>(HttpStatus.CREATED);
@@ -114,8 +115,8 @@ public class productController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<ProductDto>> search(@RequestParam String query) {
-        List<ProductDto> searchs = service.findByNameIgnoreCaseOrDescriptionContainsIgnoreCase(query, query);
+    public ResponseEntity<List<ProductDto>> search(@RequestParam String keyword) {
+        List<ProductDto> searchs = service.searchProduct(keyword);
         return ResponseEntity.ok(searchs);
     }
 }

@@ -1,192 +1,123 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>E commerce</title>
+    <title>JasDo IT e-commerce</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="product_style.css">
-    <link href="login.html" rel="import">
-    <link href="product_add.html" rel="import">
-    <link href="Sign-New.html" rel="import">
-    <link href="account.html" rel="import">
-    <link href="product-details.html" rel="import">
 </head>
 <body>
-    <header>
-        <h1>JasDo It</h1>
-        <input type="text" id="search-input" placeholder="Search for product...">
-        <button onclick="searchProducts()">Search</button>
-        <a href="login.html" class="login-link">Login</a>
-        <a href="Sign-New.html" class="sign-up-form">Sign Up</a>
-        <a href="product_add.html" class="Add-Product-link" >Add Product</a>
-        <a href="account.html" class="account-link">Account</a>
-    </header>
-    <main class="products">
-    </main>
-    <script>
-        async function fetchAndDisplayProducts() {
-            const productList = document.getElementById('product-list');
 
-            try {
-                const response = await fetch("http://localhost:8080/api/products/all-products"); // Adjust if endpoint is different
-                const products = await response.json();
+<header>
+    <h1>JasDo IT</h1>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="account.html">My Account</a>
+        <a href="login.html" id="loginBtn">Login</a>
+        <a href="Sign-New.html" id="signupBtn">Sign Up</a>
+        <a href="product_add.html" id="Product add">Add Product</a>
+    </nav>
+</header>
 
-                if (!Array.isArray(products)) {
-                    productList.innerHTML = "<p>⚠️ Failed to load products.</p>";
-                    return;
-                }
+<section class="search-bar">
+    <input type="text" id="searchInput" placeholder="Search products...">
+    <button onclick="searchProducts()">Search</button>
+</section>
 
-                productList.innerHTML = "";
+<section id="productGrid" class="product-grid">
+    <!-- Products will be dynamically loaded here -->
+</section>
 
-                for (const product of products) {
-                    const productCard = document.createElement("div");
-                    productCard.classList.add("product-item");
+<script>
+    const backendUrl = "http://localhost:8080"; // Change if needed
+    const userId = localStorage.getItem("userId"); // get logged-in user id
 
-                    // Create image container
-                    const imageContainer = document.createElement("div");
+    // Load all products
+    async function loadProducts() {
+        try {
+            let res = await fetch(`${backendUrl}/api/products/all-products`);
+            if (!res.ok) throw new Error("Failed to fetch products");
+            let products = await res.json();
+            displayProducts(products);
+        } catch (err) {
+            console.error(err);
+        }
+    }
 
-                    if (product.images && product.images.length > 0) {
-                        product.images.forEach(img => {
-                            const image = document.createElement("img");
-                            image.src = `data:image/jpeg;base64,${img.base64Data}`;
-                            image.style.width = "100%";
-                            image.style.maxHeight = "200px";
-                            image.style.objectFit = "cover";
-                            imageContainer.appendChild(image);
-                        });
-                    } else {
-                        const placeholder = document.createElement("img");
-                        placeholder.src = "https://via.placeholder.com/300x200?text=No+Image";
-                        imageContainer.appendChild(placeholder);
-                    }
+    async function searchProducts() {
+        const query = document.getElementById("searchInput").value;
 
-                    const details = document.createElement("div");
-                    details.classList.add("product-details");
+        const response = await fetch(`${backendUrl}/api/products/search?keyword=${query}`);
+        const products = await response.json();
 
-                    details.innerHTML = `
-    <h2>${product.name}</h2>
-    <h3>$${product.price}</h3>
-    <p>${product.description}</p>
-    <p>Type: ${product.type}</p>
-    <button onclick="viewProduct(${product.id})">View Details</button>
-`;
+        console.log("Products found: ", products);
 
+        // reuse displayProducts instead of duplicating rendering
+        displayProducts(products);
+    }
 
-                    productCard.appendChild(imageContainer);
-                    productCard.appendChild(details);
-                    productList.appendChild(productCard);
-                }
+    // Display products in grid
+    function displayProducts(products) {
+        const grid = document.getElementById("productGrid");
+        grid.innerHTML = "";
 
-
-            } catch (error) {
-                productList.innerHTML = "<p>❌ Error loading products: " + error.message + "</p>";
-            }
+        if (products.length === 0) {
+            grid.innerHTML = "<p>No products found.</p>";
+            return;
         }
 
-        // Call function after page loads
-        window.onload = fetchAndDisplayProducts;
-        function viewProduct(id) {
-            window.location.href = `product-details.html?id=${id}`;
-        }
-    </script>
-    <div id="product-list"></div>
+        products.forEach(p => {
+            const firstImage = (p.images && p.images.length > 0)
+                ? `${backendUrl}/api/products/product/${p.images[0].id}/images`
+                : "placeholder.jpg";
 
-    <script>
-        fetch("http://localhost:8080/api/products/all-products")
-            .then(response => response.json())
-            .then(products => {
-                const container = document.getElementById("product-list");
-                products.forEach(p => {
-                    const productCard = document.createElement("div");
-                    productCard.innerHTML = `
+            grid.innerHTML += `
+            <div class="product-card">
+                <img src="${firstImage}" alt="${p.name}">
                 <h3>${p.name}</h3>
-                <p>Price: $${p.price}</p>
-                <button onclick="viewProduct(${p.id})">View Details</button>
-            `;
-                    container.appendChild(productCard);
-                });
+                <p>${p.description ? p.description.substring(0, 60) : ""}...</p>
+                <p class="price">$${p.price}</p>
+                <button onclick="viewDetails(${p.id})">View Details</button>
+                <button onclick="addToCart(${p.id})">Add to Cart 🛒</button>
+            </div>
+        `;
+        });
+    }
+
+    // Navigate to product details
+    function viewDetails(id) {
+        window.location.href = `product-details.html?id=${id}`;
+    }
+
+    // Add product to cart
+    async function addToCart(productId) {
+        if (!userId) {
+            alert("Please login to add items to cart!");
+            window.location.href = "login.html";
+            return;
+        }
+
+        try {
+            let res = await fetch(`${backendUrl}/api/cart/add?userId=${userId}&productId=${productId}&quantity=1`, {
+                method: "POST"
             });
 
-        function viewProduct(id) {
-            window.location.href = `product-details.html?id=${id}`;
+            if (!res.ok) throw new Error("Failed to add to cart");
+
+            let data = await res.json();
+            alert("Product added to cart!");
+            console.log("Cart updated:", data);
+        } catch (err) {
+            console.error(err);
+            alert("Error adding to cart");
         }
-    </script>
-    <script>
+    }
 
-        //for search box
-        async function searchProduct() {
-            const query = document.getElementById('search-input').value.trim();
-            const productList = document.getElementById('product-list');
+    // Initial load
+    loadProducts();
 
-            if (!query) {
-                alert("❗Please enter a product name.");
-                return;
-            }
-
-            try {
-                const response = await fetch(`http://localhost:8080/api/products/get-oneProduct?name=${encodeURIComponent(query)}`);
-                if (!response.ok) {
-                    throw new Error("No product found with that name.");
-                }
-
-                const product = await response.json();
-
-                productList.innerHTML = ""; // Clear old list
-
-                const productCard = document.createElement("div");
-                productCard.classList.add("product-item");
-
-                const imageContainer = document.createElement("div");
-
-                if (product.images && product.images.length > 0) {
-                    product.images.forEach(img => {
-                        const image = document.createElement("img");
-                        image.src = `data:image/jpeg;base64,${img.base64Data}`;
-                        image.style.width = "100%";
-                        image.style.maxHeight = "200px";
-                        image.style.objectFit = "cover";
-                        imageContainer.appendChild(image);
-                    });
-                } else {
-                    const placeholder = document.createElement("img");
-                    placeholder.src = "https://via.placeholder.com/300x200?text=No+Image";
-                    imageContainer.appendChild(placeholder);
-                }
-
-                const details = document.createElement("div");
-                details.classList.add("product-details");
-                details.innerHTML = `
-                <h2>${product.name}</h2>
-                <h3>$${product.price}</h3>
-                <p>${product.description}</p>
-                <p>Type: ${product.type}</p>
-            `;
-
-                productCard.appendChild(imageContainer);
-                productCard.appendChild(details);
-                productList.appendChild(productCard);
-
-            } catch (error) {
-                productList.innerHTML = `<p>❌ ${error.message}</p>`;
-            }
-        }
-
-        window.onload = fetchAndDisplayProducts;
-    </script>
-    <script>
-        async function searchProducts() {
-            const query = document.getElementById('search-input').value.trim();
-            if (!query) {
-                alert("❗Please enter a product name.");
-                return;
-            }
-            const searchUrl = `http://localhost:8080/api/products/search?query=${encodeURIComponent(query)}`;
-            await fetchAndDisplayProducts(searchUrl);
-        }
-
-        // Load products when page opens
-        window.onload = () => fetchAndDisplayProducts();
-    </script>
+</script>
 
 </body>
 </html>
